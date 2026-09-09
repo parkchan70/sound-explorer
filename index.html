@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="마이크로 소리 크기(dB)를 재고 파형과 주파수를 눈으로 비교하는 초등 과학 탐구 앱">
+<meta name="theme-color" content="#E9EDF4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#080D18" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1424'/%3E%3Cpath d='M4 16h3l3-8 3.5 16L17 10l3 8 2.5-4H28' stroke='%233D8BF2' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<style>html{color-scheme:light dark}img{max-width:100%}[hidden]{display:none!important}</style><title>소리 탐험대</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gothic+A1:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#E9EDF4;
+  --surface:#FFFFFF;
+  --surface-2:#F4F7FC;
+  --ink:#111A2E;
+  --ink-2:#44506B;
+  --ink-3:#7C89A3;
+  --line:#D6DDEA;
+  --line-soft:#E6EBF3;
+  --scope-bg:#0C1424;
+  --scope-grid:#1C2A44;
+  --scope-ink:#93A6C6;
+  --accent:#2F6BE8;
+  --accent-soft:#DCE7FD;
+  --z1:#3D8BF2;
+  --z2:#12A38C;
+  --z3:#DB9A11;
+  --z4:#F0703C;
+  --z5:#E23D5C;
+  --shadow:0 1px 2px rgba(17,26,46,.06), 0 8px 24px -12px rgba(17,26,46,.22);
+  --radius:16px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#080D18;
+    --surface:#121A2C;
+    --surface-2:#18223A;
+    --ink:#E8EDF8;
+    --ink-2:#A9B6CE;
+    --ink-3:#7C89A3;
+    --line:#28334C;
+    --line-soft:#1F2A41;
+    --scope-bg:#070C17;
+    --scope-grid:#1B2740;
+    --accent:#6C9BFF;
+    --accent-soft:#1E2C4C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#080D18;
+  --surface:#121A2C;
+  --surface-2:#18223A;
+  --ink:#E8EDF8;
+  --ink-2:#A9B6CE;
+  --ink-3:#7C89A3;
+  --line:#28334C;
+  --line-soft:#1F2A41;
+  --scope-bg:#070C17;
+  --scope-grid:#1B2740;
+  --accent:#6C9BFF;
+  --accent-soft:#1E2C4C;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Gothic A1","Malgun Gothic",system-ui,-apple-system,sans-serif;
+  font-size:15px;
+  line-height:1.6;
+  -webkit-text-size-adjust:100%;
+}
+h1,h2,h3{margin:0;font-family:"Jua","Gothic A1","Malgun Gothic",system-ui,sans-serif;font-weight:400;letter-spacing:.01em;text-wrap:balance}
+button{font-family:inherit;color:inherit}
+.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 56px}
+
+/* ---------- header ---------- */
+.top{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:14px 18px;margin-bottom:16px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+.brand{display:flex;align-items:center;gap:11px;margin-right:auto}
+.brand h1{font-size:24px;line-height:1.1}
+.brand p{margin:1px 0 0;font-size:12px;color:var(--ink-3);letter-spacing:.02em}
+.mark{width:40px;height:40px;flex:none;border-radius:12px;background:var(--scope-bg);display:grid;place-items:center}
+.mark svg{display:block}
+
+.status{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 12px 6px 10px;border-radius:999px;
+  background:var(--surface-2);border:1px solid var(--line);
+  font-size:12.5px;font-weight:700;color:var(--ink-2);white-space:nowrap;
+}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.status.live .dot{background:var(--z5);animation:pulse 1.2s ease-in-out infinite}
+.status.live{color:var(--z5);border-color:color-mix(in srgb,var(--z5) 35%,var(--line))}
+@keyframes pulse{50%{opacity:.25}}
+
+.btn{
+  border:1px solid transparent;border-radius:12px;padding:11px 20px;
+  font-size:15px;font-weight:800;cursor:pointer;
+  background:var(--accent);color:#fff;
+  transition:transform .12s ease, filter .12s ease;
+}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:var(--surface-2);color:var(--ink);border-color:var(--line)}
+.btn.stop{background:var(--z5)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:8px 14px;font-size:13px;border-radius:10px}
+:where(button,select,input,[tabindex]):focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.notice{
+  display:none;margin-bottom:16px;padding:12px 16px;border-radius:12px;
+  background:color-mix(in srgb,var(--z5) 12%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--z5) 40%,var(--line));
+  color:var(--ink);font-size:13.5px;
+}
+.notice.on{display:block}
+
+/* ---------- layout ---------- */
+.stage{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+@media (max-width:880px){.stage{grid-template-columns:1fr}}
+
+.panel{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+}
+.phead{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+.phead h2{font-size:17px;margin-right:auto}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--ink-3);text-transform:uppercase}
+
+.tag{
+  font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 9px;border-radius:999px;
+  background:var(--surface-2);border:1px solid var(--line);color:var(--ink-3);white-space:nowrap;
+}
+.tag.sample{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.tag.hold{background:color-mix(in srgb,var(--z3) 20%,var(--surface));border-color:transparent;color:var(--z3)}
+
+/* ---------- meter ---------- */
+.meter-body{padding:16px}
+.reading{display:flex;align-items:baseline;gap:8px;justify-content:center}
+.reading .big{font-size:66px;font-weight:600;line-height:.95;letter-spacing:-.03em}
+.reading .unit{font-size:20px;font-weight:500;color:var(--ink-3)}
+.zone-card{
+  margin-top:12px;padding:12px 14px;border-radius:13px;
+  display:flex;align-items:center;gap:12px;
+  background:var(--zone-soft);border:1px solid var(--zone-line);
+  transition:background .25s ease,border-color .25s ease;
+}
+.face{font-size:30px;line-height:1;flex:none;filter:saturate(1.1)}
+.zone-card .zt{font-family:"Jua","Gothic A1",sans-serif;font-size:17px;color:var(--zone)}
+.zone-card .ze{font-size:12.5px;color:var(--ink-2);line-height:1.35}
+
+.gauge{display:flex;gap:12px;margin-top:16px}
+.track{
+  position:relative;width:46px;flex:none;height:290px;border-radius:12px;overflow:hidden;
+  background:var(--surface-2);border:1px solid var(--line);
+}
+.fill{position:absolute;left:0;right:0;bottom:0;height:0%;
+  background:linear-gradient(to top,var(--z1) 0%,var(--z1) 24%,var(--z2) 38%,var(--z3) 55%,var(--z4) 72%,var(--z5) 92%);
+  transition:height .09s linear}
+.peakline{position:absolute;left:0;right:0;height:3px;background:var(--ink);bottom:0;transition:bottom .3s ease;border-radius:2px;opacity:.85}
+.scale{position:relative;flex:1;height:290px;font-size:11.5px;color:var(--ink-3)}
+.scale i{position:absolute;left:0;right:0;transform:translateY(50%);font-style:normal;display:flex;gap:7px;align-items:center;white-space:nowrap}
+.scale i::before{content:"";width:9px;height:1px;background:var(--line);flex:none}
+.scale i b{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.stat{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:11px;padding:9px 11px}
+.stat span{display:block;font-size:11px;color:var(--ink-3);font-weight:700;letter-spacing:.03em}
+.stat b{font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+
+.calib{margin-top:14px;padding-top:13px;border-top:1px solid var(--line-soft)}
+.calib label{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-3);font-weight:700}
+.calib input{width:100%;margin-top:6px;accent-color:var(--accent)}
+.calib p{margin:5px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.45}
+
+/* ---------- scope ---------- */
+.right{display:grid;gap:16px}
+.tabs{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:11px;padding:3px}
+.tabs button{
+  border:0;background:transparent;border-radius:8px;padding:6px 14px;
+  font-size:13px;font-weight:700;color:var(--ink-3);cursor:pointer;
+}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(17,26,46,.14)}
+
+.screen{position:relative;margin:14px 16px 0;border-radius:12px;overflow:hidden;background:var(--scope-bg)}
+.screen canvas{display:block;width:100%;height:230px}
+@media (max-width:600px){.screen canvas{height:180px}}
+.screen .badge{
+  position:absolute;top:9px;left:11px;display:flex;gap:6px;align-items:center;
+  font-size:11px;font-weight:700;color:var(--scope-ink);letter-spacing:.05em;
+}
+.screen .badge2{position:absolute;top:9px;right:11px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--scope-ink)}
+
+.readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px}
+@media (max-width:600px){.readouts{grid-template-columns:1fr;gap:6px}}
+.ro{padding:10px 12px;border-radius:11px;background:var(--surface-2);border:1px solid var(--line-soft)}
+.ro span{display:block;font-size:11.5px;color:var(--ink-3);font-weight:700}
+.ro b{font-family:"IBM Plex Mono",monospace;font-size:21px;font-weight:600;line-height:1.25}
+.ro b small{font-size:12px;color:var(--ink-3);font-weight:500;margin-left:3px}
+.ro .hint{font-size:11.5px;color:var(--ink-2);font-family:"Gothic A1",sans-serif}
+
+.ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:0 16px 15px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:6px 11px;font-size:12px;font-weight:700;color:var(--ink-3);cursor:pointer;font-family:"IBM Plex Mono",monospace}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.ctrls .lbl{font-size:12px;color:var(--ink-3);font-weight:700}
+
+.tl{padding:0 16px 16px}
+.tl canvas{display:block;width:100%;height:96px;border-radius:11px;background:var(--surface-2);border:1px solid var(--line-soft)}
+.tl .cap{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3);margin-top:6px}
+
+/* ---------- snapshots ---------- */
+.shots{margin-top:16px}
+.shots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;padding:16px}
+.card{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column}
+.card .cwave{background:var(--scope-bg)}
+.card canvas{display:block;width:100%;height:88px}
+.card .cbody{padding:10px 12px 12px;display:grid;gap:7px}
+.card .cname{
+  font-family:"Jua","Gothic A1",sans-serif;font-size:15px;background:transparent;border:0;
+  border-bottom:1px dashed var(--line);padding:1px 0;width:100%;color:var(--ink);
+}
+.card .cname:focus{outline:none;border-bottom-color:var(--accent)}
+.card .crow{display:flex;gap:6px;flex-wrap:wrap}
+.chip{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;
+  padding:3px 8px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line-soft);
+}
+.chip.db{background:var(--zone-soft);border-color:transparent;color:var(--zone)}
+.card .del{align-self:flex-start;border:0;background:transparent;color:var(--ink-3);font-size:12px;font-weight:700;cursor:pointer;padding:0}
+.card .del:hover{color:var(--z5)}
+.empty{padding:26px 16px;text-align:center;color:var(--ink-3);font-size:13.5px}
+
+/* ---------- guide ---------- */
+.guide{margin-top:16px;padding:18px 16px}
+.guide h2{font-size:19px;margin-bottom:3px}
+.guide>p{margin:0 0 14px;font-size:13.5px;color:var(--ink-2)}
+.gg{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.g{padding:13px 15px;border-radius:12px;background:var(--surface-2);border-left:3px solid var(--gc);border-top:1px solid var(--line-soft);border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
+.g h3{font-size:15.5px;color:var(--gc)}
+.g p{margin:5px 0 0;font-size:13px;color:var(--ink-2);line-height:1.55}
+.g .what{margin-top:8px;font-size:12px;color:var(--ink-3);font-weight:700}
+
+footer{margin-top:22px;text-align:center;font-size:12px;color:var(--ink-3);line-height:1.7}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg width="26" height="20" viewBox="0 0 26 20" fill="none">
+          <path d="M1 10h3l2.5-7 3 14 3-11 3 8 2.5-4H23" stroke="#3D8BF2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>소리 탐험대</h1>
+        <p>내 소리는 몇 데시벨일까?</p>
+      </div>
+    </div>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">마이크 꺼짐</span></div>
+    <button class="btn" id="mainBtn">🎤 측정 시작</button>
+    <button class="btn ghost" id="shotBtn" disabled>이 소리 저장</button>
+  </header>
+
+  <div class="notice" id="notice"></div>
+
+  <div class="stage">
+
+    <!-- 소리 온도계 -->
+    <section class="panel" aria-label="소리 크기 측정">
+      <div class="phead"><h2>소리 온도계</h2><span class="tag" id="meterTag">예시</span></div>
+      <div class="meter-body">
+        <div class="reading">
+          <span class="big num" id="dbNow">42</span><span class="unit">dB</span>
+        </div>
+
+        <div class="zone-card" id="zoneCard">
+          <span class="face" id="zoneFace">🍃</span>
+          <div>
+            <div class="zt" id="zoneName">조용해요</div>
+            <div class="ze" id="zoneEx">도서관에서 책장 넘기는 소리 정도</div>
+          </div>
+        </div>
+
+        <div class="gauge">
+          <div class="track"><div class="fill" id="fill"></div><div class="peakline" id="peakline"></div></div>
+          <div class="scale" id="scale"></div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><span>가장 큰 소리</span><b class="num" id="maxDb">—</b></div>
+          <div class="stat"><span>평균</span><b class="num" id="avgDb">—</b></div>
+        </div>
+
+        <div class="calib">
+          <label for="calib">마이크 보정 <span class="num" id="calibVal">+0 dB</span></label>
+          <input type="range" id="calib" min="-20" max="20" step="1" value="0">
+          <p>조용한 교실에서 30~40dB이 나오도록 맞추면 더 정확해요. 기기마다 마이크가 달라요.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 오실로스코프 -->
+    <div class="right">
+      <section class="panel" aria-label="소리 파형 보기">
+        <div class="phead">
+          <h2>소리 파형</h2>
+          <div class="tabs" role="tablist">
+            <button role="tab" id="tabWave" aria-selected="true">물결 모양</button>
+            <button role="tab" id="tabSpec" aria-selected="false">주파수</button>
+          </div>
+        </div>
+
+        <div class="screen">
+          <canvas id="scope" aria-label="소리 파형 화면"></canvas>
+          <div class="badge"><span id="scopeBadge">예시 파형 · 라(A4) 440Hz</span></div>
+          <div class="badge2 num" id="scopeInfo">25 ms</div>
+        </div>
+
+        <div class="readouts">
+          <div class="ro">
+            <span>진폭 (소리의 크기)</span>
+            <b class="num" id="ampVal">38<small>%</small></b>
+          </div>
+          <div class="ro">
+            <span>주파수 (소리의 높낮이)</span>
+            <b class="num" id="hzVal">440<small>Hz</small></b>
+          </div>
+          <div class="ro">
+            <span>가장 가까운 음</span>
+            <b id="noteVal">라</b>
+            <div class="hint" id="noteHint">1초에 440번 떨려요</div>
+          </div>
+        </div>
+
+        <div class="ctrls">
+          <span class="lbl">보이는 시간</span>
+          <div class="seg" id="winSeg">
+            <button data-ms="10" aria-pressed="false">10ms</button>
+            <button data-ms="25" aria-pressed="true">25ms</button>
+            <button data-ms="50" aria-pressed="false">50ms</button>
+          </div>
+          <button class="btn ghost sm" id="loudBtn" disabled>가장 큰 순간 보기</button>
+          <button class="btn ghost sm" id="liveBtn" style="display:none">지금 소리로 돌아가기</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="phead"><h2>시간에 따른 소리 크기</h2><span class="tag" id="tlTag">예시 기록</span></div>
+        <div class="tl">
+          <canvas id="timeline" aria-label="시간에 따른 소리 크기 그래프"></canvas>
+          <div class="cap"><span>12초 전</span><span>지금</span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- 저장한 소리 -->
+  <section class="panel shots">
+    <div class="phead">
+      <h2>저장한 소리 비교하기</h2>
+      <span class="eyebrow" id="shotCount">예시 2개</span>
+      <button class="btn ghost sm" id="clearBtn">모두 지우기</button>
+    </div>
+    <div class="shots-grid" id="shots"></div>
+  </section>
+
+  <!-- 탐구 안내 -->
+  <section class="panel guide">
+    <h2>이렇게 실험해 보세요</h2>
+    <p>소리를 낸 다음 <b>이 소리 저장</b>을 누르면 카드로 남아요. 두 소리를 나란히 놓고 파형을 비교해 보세요.</p>
+    <div class="gg">
+      <div class="g" style="--gc:var(--z5)">
+        <h3>큰 소리</h3>
+        <p>책상을 세게 두드리거나 크게 "아—" 하고 소리쳐 보세요.</p>
+        <div class="what">→ 물결의 <b>위아래 높이(진폭)</b>가 커져요</div>
+      </div>
+      <div class="g" style="--gc:var(--z1)">
+        <h3>작은 소리</h3>
+        <p>같은 "아—"를 아주 작게, 속삭이듯 내 보세요.</p>
+        <div class="what">→ 높낮이는 그대로인데 물결이 <b>납작</b>해져요</div>
+      </div>
+      <div class="g" style="--gc:var(--z4)">
+        <h3>높은 소리</h3>
+        <p>가장 높은 목소리로 "이—" 하고 길게 내 보세요.</p>
+        <div class="what">→ 같은 시간 안에 물결이 <b>더 촘촘</b>해요 (주파수↑)</div>
+      </div>
+      <div class="g" style="--gc:var(--z2)">
+        <h3>낮은 소리</h3>
+        <p>가장 낮은 목소리로 "우—" 하고 길게 내 보세요.</p>
+        <div class="what">→ 물결이 <b>넓고 느긋</b>해요 (주파수↓)</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    측정값은 기기 마이크로 어림한 값이에요. 실제 소음 측정기와는 차이가 있어요.<br>
+    85dB보다 큰 소리를 오래 들으면 귀가 다칠 수 있으니 조심해요.
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ 소리 크기 단계 ============ */
+var ZONES = [
+  {max:35,  name:"아주 조용해요", short:"아주 작은 소리", face:"🤫", ex:"눈 내리는 밤, 숨소리 정도",        cvar:"--z1"},
+  {max:55,  name:"조용해요",      short:"작은 소리",     face:"🍃", ex:"도서관에서 책장 넘기는 소리 정도", cvar:"--z2"},
+  {max:70,  name:"보통이에요",    short:"보통 소리",     face:"💬", ex:"친구와 이야기하는 소리 정도",      cvar:"--z3"},
+  {max:85,  name:"시끄러워요",    short:"큰 소리",       face:"📢", ex:"청소기나 시끄러운 교실 정도",      cvar:"--z4"},
+  {max:999, name:"아주 시끄러워요",short:"아주 큰 소리",  face:"⚠️", ex:"지하철·공사장! 귀를 보호해요",     cvar:"--z5"}
+];
+var MARKS = [
+  {db:20, t:"나뭇잎 스치는 소리"},
+  {db:30, t:"속삭이는 소리"},
+  {db:45, t:"조용한 교실"},
+  {db:60, t:"보통 대화"},
+  {db:70, t:"청소기"},
+  {db:80, t:"시끄러운 교실"},
+  {db:95, t:"지하철 안"},
+  {db:110,t:"공사장·콘서트"}
+];
+var DB_MIN = 0, DB_MAX = 120;
+var NOTES = ["도","도♯","레","레♯","미","파","파♯","솔","솔♯","라","라♯","시"];
+
+function zoneOf(db){ for(var i=0;i<ZONES.length;i++){ if(db < ZONES[i].max) return ZONES[i]; } return ZONES[4]; }
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function noteOf(hz){
+  if(!hz || hz<=0) return {name:"—", cents:0};
+  var n = Math.round(12*Math.log2(hz/440));
+  var idx = ((n+9)%12+12)%12;
+  var oct = 4 + Math.floor((n+9)/12);
+  return {name:NOTES[idx]+(oct>=5?"↑":(oct<=3?"↓":"")), oct:oct};
+}
+
+/* ============ 상태 ============ */
+var S = {
+  running:false, demo:true, holding:false,
+  db:42, dbSmooth:42, peak:0, sum:0, count:0,
+  hz:440, amp:0.38, clarity:1,
+  winMs:25, tab:"wave",
+  wave:null, spec:null, sr:48000,
+  hist:[], HISTMAX:760,
+  loudest:null, showLoud:false,
+  shots:[], calib:0, seq:0
+};
+
+/* ============ 예시 데이터 ============ */
+function synth(hz, amp, n, sr, harm){
+  var a = new Float32Array(n);
+  for(var i=0;i<n;i++){
+    var t=i/sr, v=Math.sin(2*Math.PI*hz*t);
+    if(harm){ v += 0.42*Math.sin(2*Math.PI*hz*2*t) + 0.22*Math.sin(2*Math.PI*hz*3*t); v/=1.5; }
+    a[i]= v*amp*(1+0.03*Math.sin(2*Math.PI*5*t));
+  }
+  return a;
+}
+S.wave = synth(440, 0.38, 4096, 48000, true);
+S.spec = (function(){ var a=new Uint8Array(512); for(var i=0;i<512;i++){ var d=Math.abs(i-19); a[i]=Math.max(0, 215*Math.exp(-d*d/6) + 120*Math.exp(-Math.pow(i-38,2)/9) + 60*Math.exp(-Math.pow(i-57,2)/14) + Math.max(0,26-i*0.05)*Math.random()); } return a; })();
+(function seedHist(){
+  for(var i=0;i<S.HISTMAX;i++){
+    var t=i/S.HISTMAX*12, v=38;
+    v += 22*Math.exp(-Math.pow(t-3.0,2)/0.5);
+    v += 34*Math.exp(-Math.pow(t-6.2,2)/0.35);
+    v += 14*Math.exp(-Math.pow(t-9.4,2)/1.6);
+    S.hist.push(v + Math.random()*3);
+  }
+})();
+
+/* ============ DOM ============ */
+var $ = function(id){ return document.getElementById(id); };
+var elDb=$("dbNow"), elFace=$("zoneFace"), elZName=$("zoneName"), elZEx=$("zoneEx"), elZCard=$("zoneCard"),
+    elFill=$("fill"), elPeak=$("peakline"), elMax=$("maxDb"), elAvg=$("avgDb"),
+    elAmp=$("ampVal"), elHz=$("hzVal"), elNote=$("noteVal"), elNoteHint=$("noteHint"),
+    elScopeBadge=$("scopeBadge"), elScopeInfo=$("scopeInfo"),
+    elStatus=$("status"), elStatusText=$("statusText"), elMain=$("mainBtn"), elShot=$("shotBtn"),
+    elMeterTag=$("meterTag"), elTlTag=$("tlTag"), elNotice=$("notice"),
+    elLoud=$("loudBtn"), elLive=$("liveBtn"), elShots=$("shots"), elCount=$("shotCount");
+
+/* 눈금 만들기 */
+(function(){
+  var html="";
+  for(var i=0;i<MARKS.length;i++){
+    var m=MARKS[i], y=100-((m.db-DB_MIN)/(DB_MAX-DB_MIN))*100;
+    html += '<i style="top:'+y.toFixed(1)+'%"><b>'+m.db+'</b>'+m.t+'</i>';
+  }
+  $("scale").innerHTML = html;
+})();
+
+/* ============ 캔버스 ============ */
+function fit(cv){
+  var r = cv.getBoundingClientRect();
+  var d = Math.min(window.devicePixelRatio||1, 2);
+  var w = Math.max(1, Math.round(r.width*d)), h = Math.max(1, Math.round(r.height*d));
+  if(cv.width!==w || cv.height!==h){ cv.width=w; cv.height=h; }
+  var ctx = cv.getContext("2d");
+  ctx.setTransform(d,0,0,d,0,0);
+  return {ctx:ctx, w:r.width, h:r.height};
+}
+
+function drawScope(){
+  var cv=$("scope"), g=fit(cv), ctx=g.ctx, W=g.w, H=g.h;
+  ctx.clearRect(0,0,W,H);
+  var grid=cssVar("--scope-grid"), ink=cssVar("--scope-ink");
+  var src = S.showLoud && S.loudest ? S.loudest : {wave:S.wave, spec:S.spec, hz:S.hz, amp:S.amp, sr:S.sr};
+
+  if(S.tab==="wave"){
+    // 격자: 세로 = 5ms, 가로 = 진폭 눈금
+    ctx.strokeStyle=grid; ctx.lineWidth=1;
+    var ms=S.winMs, steps=ms/5;
+    for(var i=0;i<=steps;i++){ var x=Math.round(i/steps*W)+.5; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for(var k=1;k<4;k++){ var y=Math.round(k/4*H)+.5; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    ctx.strokeStyle="rgba(147,166,198,.45)"; ctx.beginPath(); ctx.moveTo(0,Math.round(H/2)+.5); ctx.lineTo(W,Math.round(H/2)+.5); ctx.stroke();
+
+    var wave = src.wave, sr = src.sr || S.sr;
+    var n = Math.min(wave.length, Math.round(sr*ms/1000));
+    // 파형이 흔들리지 않도록 상승 영점에서 시작
+    var start=0, look=Math.min(wave.length-n-1, Math.round(sr*0.01));
+    for(var s=1;s<look;s++){ if(wave[s-1]<=0 && wave[s]>0){ start=s; break; } }
+
+    var col = cssVar(zoneOf(S.showLoud&&S.loudest?S.loudest.db:S.dbSmooth).cvar);
+    ctx.lineWidth=2.2; ctx.lineJoin="round"; ctx.lineCap="round"; ctx.strokeStyle=col;
+    ctx.shadowColor=col; ctx.shadowBlur=10;
+    ctx.beginPath();
+    for(var p=0;p<n;p++){
+      var x2=p/(n-1)*W, y2=H/2 - clamp(wave[start+p]||0,-1,1)*(H/2-8)*1.9;
+      p===0 ? ctx.moveTo(x2,y2) : ctx.lineTo(x2,y2);
+    }
+    ctx.stroke(); ctx.shadowBlur=0;
+
+    ctx.fillStyle=ink; ctx.font='11px "IBM Plex Mono", monospace';
+    ctx.fillText("0 ms", 6, H-7);
+    ctx.textAlign="right"; ctx.fillText(ms+" ms", W-6, H-7); ctx.textAlign="left";
+  } else {
+    var spec = src.spec, bins=spec.length;
+    var show = Math.min(bins, 220);
+    var bw = W/show;
+    for(var b=0;b<show;b++){
+      var v=spec[b]/255, hgt=Math.pow(v,0.85)*(H-26);
+      var f=(b*(S.sr/2)/bins);
+      var c = f<250 ? cssVar("--z1") : f<800 ? cssVar("--z2") : f<2000 ? cssVar("--z3") : cssVar("--z4");
+      ctx.fillStyle=c; ctx.globalAlpha = 0.35 + v*0.65;
+      ctx.fillRect(b*bw, H-18-hgt, Math.max(1,bw-1), hgt);
+    }
+    ctx.globalAlpha=1;
+    ctx.strokeStyle=grid; ctx.beginPath(); ctx.moveTo(0,H-18.5); ctx.lineTo(W,H-18.5); ctx.stroke();
+    ctx.fillStyle=ink; ctx.font='10.5px "IBM Plex Mono", monospace';
+    var labels=[0,500,1000,2000,4000];
+    for(var L=0;L<labels.length;L++){
+      var fx = labels[L]/(S.sr/2)*bins/show*W;
+      if(fx>W-24) continue;
+      ctx.fillText(labels[L]===0?"0":(labels[L]/1000)+"k", fx+3, H-5);
+    }
+    ctx.textAlign="right"; ctx.fillText("낮은 소리 ← → 높은 소리", W-6, 15); ctx.textAlign="left";
+  }
+}
+
+function drawTimeline(){
+  var cv=$("timeline"), g=fit(cv), ctx=g.ctx, W=g.w, H=g.h;
+  ctx.clearRect(0,0,W,H);
+  var pad=4, n=S.hist.length;
+  // 기준선 (85dB 주의선)
+  var y85 = H - ((85-DB_MIN)/(DB_MAX-DB_MIN))*H;
+  ctx.strokeStyle=cssVar("--z5"); ctx.globalAlpha=.35; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(0,y85); ctx.lineTo(W,y85); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha=1;
+  ctx.fillStyle=cssVar("--z5"); ctx.font='10px "IBM Plex Mono", monospace';
+  ctx.fillText("85 귀 조심", 5, y85-4);
+
+  if(n<2) return;
+  var grad=ctx.createLinearGradient(0,H,0,0);
+  grad.addColorStop(0, cssVar("--z1")); grad.addColorStop(.42, cssVar("--z2"));
+  grad.addColorStop(.62, cssVar("--z3")); grad.addColorStop(.78, cssVar("--z4")); grad.addColorStop(1, cssVar("--z5"));
+
+  ctx.beginPath();
+  ctx.moveTo(0,H);
+  for(var i=0;i<n;i++){
+    var x=i/(n-1)*W, y=H - clamp((S.hist[i]-DB_MIN)/(DB_MAX-DB_MIN),0,1)*(H-pad);
+    ctx.lineTo(x,y);
+  }
+  ctx.lineTo(W,H); ctx.closePath();
+  ctx.fillStyle=grad; ctx.globalAlpha=.16; ctx.fill(); ctx.globalAlpha=1;
+
+  ctx.beginPath();
+  for(var j=0;j<n;j++){
+    var x2=j/(n-1)*W, y2=H - clamp((S.hist[j]-DB_MIN)/(DB_MAX-DB_MIN),0,1)*(H-pad);
+    j===0?ctx.moveTo(x2,y2):ctx.lineTo(x2,y2);
+  }
+  ctx.strokeStyle=grad; ctx.lineWidth=2; ctx.lineJoin="round"; ctx.stroke();
+
+  var lastY = H - clamp((S.hist[n-1]-DB_MIN)/(DB_MAX-DB_MIN),0,1)*(H-pad);
+  ctx.fillStyle=cssVar(zoneOf(S.hist[n-1]).cvar);
+  ctx.beginPath(); ctx.arc(W-3, lastY, 3.5, 0, Math.PI*2); ctx.fill();
+}
+
+function drawShot(cv, shot){
+  var g=fit(cv), ctx=g.ctx, W=g.w, H=g.h;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle=cssVar("--scope-grid"); ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,Math.round(H/2)+.5); ctx.lineTo(W,Math.round(H/2)+.5); ctx.stroke();
+  var w=shot.wave, n=w.length, col=cssVar(zoneOf(shot.db).cvar);
+  ctx.strokeStyle=col; ctx.lineWidth=1.7; ctx.lineJoin="round";
+  ctx.beginPath();
+  for(var i=0;i<n;i++){
+    var x=i/(n-1)*W, y=H/2 - clamp(w[i],-1,1)*(H/2-5)*1.9;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+/* ============ 화면 갱신 ============ */
+function paintZone(db){
+  var z=zoneOf(db), c=cssVar(z.cvar);
+  elFace.textContent=z.face; elZName.textContent=z.name; elZEx.textContent=z.ex;
+  elZCard.style.setProperty("--zone", c);
+  elZCard.style.setProperty("--zone-soft", "color-mix(in srgb,"+c+" 12%, var(--surface))");
+  elZCard.style.setProperty("--zone-line", "color-mix(in srgb,"+c+" 35%, var(--line))");
+}
+function updateUI(){
+  var db=S.dbSmooth;
+  elDb.textContent = Math.round(db);
+  paintZone(db);
+  elFill.style.height = clamp((db-DB_MIN)/(DB_MAX-DB_MIN)*100,0,100).toFixed(1)+"%";
+  elPeak.style.bottom = clamp((S.peak-DB_MIN)/(DB_MAX-DB_MIN)*100,0,100).toFixed(1)+"%";
+  elMax.textContent = S.peak>0 ? Math.round(S.peak) : "—";
+  elAvg.textContent = S.count>0 ? Math.round(S.sum/S.count) : "—";
+
+  var src = S.showLoud && S.loudest ? S.loudest : S;
+  elAmp.innerHTML = Math.round(clamp(src.amp,0,1)*100)+'<small>%</small>';
+  if(src.hz>0){
+    elHz.innerHTML = Math.round(src.hz)+'<small>Hz</small>';
+    var nt=noteOf(src.hz);
+    elNote.textContent=nt.name;
+    elNoteHint.textContent="1초에 "+Math.round(src.hz)+"번 떨려요";
+  } else {
+    elHz.innerHTML = '—';
+    elNote.textContent="—";
+    elNoteHint.textContent="또렷한 높낮이가 없어요";
+  }
+  elScopeInfo.textContent = S.tab==="wave" ? S.winMs+" ms" : "0 – "+Math.round(S.sr/2000)+" kHz";
+}
+
+/* ============ 오디오 ============ */
+var ac=null, analyser=null, stream=null, raf=null, timeBuf=null, freqBuf=null, frame=0, lastHist=0;
+
+function detectPitch(buf, sr){
+  var SIZE=Math.min(buf.length,1536), i, j;
+  var rms=0; for(i=0;i<SIZE;i++) rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/SIZE);
+  if(rms<0.008) return 0;
+  var r1=0, r2=SIZE-1, thres=0.2;
+  for(i=0;i<SIZE/2;i++){ if(Math.abs(buf[i])<thres){ r1=i; break; } }
+  for(i=1;i<SIZE/2;i++){ if(Math.abs(buf[SIZE-i])<thres){ r2=SIZE-i; break; } }
+  var n=r2-r1; if(n<200) return 0;
+  var c=new Float32Array(n);
+  for(i=0;i<n;i++){ var s=0; for(j=0;j<n-i;j++) s+=buf[r1+j]*buf[r1+j+i]; c[i]=s; }
+  var d=0; while(d<n-1 && c[d]>c[d+1]) d++;
+  var maxv=-1, maxp=-1;
+  for(i=d;i<n;i++){ if(c[i]>maxv){ maxv=c[i]; maxp=i; } }
+  if(maxp<=0 || maxv/(c[0]||1) < 0.35) return 0;
+  var T=maxp;
+  if(T>0 && T<n-1){
+    var x1=c[T-1], x2=c[T], x3=c[T+1], a=(x1+x3-2*x2)/2, b=(x3-x1)/2;
+    if(a) T = T - b/(2*a);
+  }
+  var hz=sr/T;
+  return (hz>55 && hz<4000) ? hz : 0;
+}
+
+function loop(){
+  raf=requestAnimationFrame(loop);
+  if(!analyser) return;
+  analyser.getFloatTimeDomainData(timeBuf);
+
+  var sum=0, peakAmp=0;
+  for(var i=0;i<timeBuf.length;i++){ var v=timeBuf[i]; sum+=v*v; var a=Math.abs(v); if(a>peakAmp) peakAmp=a; }
+  var rms=Math.sqrt(sum/timeBuf.length);
+  var db = 20*Math.log10(Math.max(rms,1e-7)) + 94 + S.calib;
+  db = clamp(db, 0, 130);
+
+  S.db=db;
+  S.dbSmooth += (db - S.dbSmooth) * (db > S.dbSmooth ? 0.55 : 0.14);
+  S.amp = peakAmp;
+  S.wave = timeBuf.slice(0);
+
+  analyser.getByteFrequencyData(freqBuf);
+  S.spec = freqBuf.slice(0);
+
+  if(frame%3===0){
+    var hz = detectPitch(timeBuf, S.sr);
+    if(hz>0) S.hz=hz; else if(S.dbSmooth < 42) S.hz=0;
+  }
+  frame++;
+
+  if(S.dbSmooth > S.peak) S.peak = S.dbSmooth;
+  S.sum += S.dbSmooth; S.count++;
+
+  // 가장 큰 순간 자동 포착
+  if(!S.loudest || S.dbSmooth > S.loudest.db + 0.5){
+    S.loudest = {db:S.dbSmooth, wave:S.wave.slice(0), spec:S.spec.slice(0), hz:S.hz, amp:S.amp, sr:S.sr};
+    elLoud.disabled=false;
+  }
+
+  var now=performance.now();
+  if(now-lastHist > 16){
+    S.hist.push(S.dbSmooth);
+    while(S.hist.length > S.HISTMAX) S.hist.shift();
+    lastHist=now;
+  }
+
+  updateUI();
+  drawScope();
+  drawTimeline();
+}
+
+function setStatus(text, live){
+  elStatusText.textContent=text;
+  elStatus.classList.toggle("live", !!live);
+}
+function showNotice(msg){
+  elNotice.innerHTML=msg; elNotice.classList.add("on");
+}
+
+async function start(){
+  elNotice.classList.remove("on");
+  try{
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      throw new Error("insecure");
+    }
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false }
+    });
+    ac = new (window.AudioContext||window.webkitAudioContext)();
+    if(ac.state==="suspended") await ac.resume();
+    S.sr = ac.sampleRate;
+    var src = ac.createMediaStreamSource(stream);
+    analyser = ac.createAnalyser();
+    analyser.fftSize = 4096;
+    analyser.smoothingTimeConstant = 0.55;
+    timeBuf = new Float32Array(analyser.fftSize);
+    freqBuf = new Uint8Array(analyser.frequencyBinCount);
+    src.connect(analyser);
+
+    S.running=true; S.demo=false; S.holding=false; S.showLoud=false; S.loudest=null;
+    S.peak=0; S.sum=0; S.count=0; S.hist=[];
+    elMeterTag.textContent="측정 중"; elMeterTag.className="tag";
+    elTlTag.textContent="지금 기록 중"; elTlTag.className="tag";
+    elScopeBadge.textContent="실시간 파형";
+    elMain.textContent="■ 정지하고 파형 보기"; elMain.className="btn stop";
+    elShot.disabled=false; elLoud.disabled=true; elLive.style.display="none";
+    setStatus("듣는 중", true);
+    frame=0; lastHist=0;
+    loop();
+  }catch(err){
+    var msg;
+    if(err && (err.name==="NotAllowedError" || err.name==="SecurityError")){
+      msg = "<b>마이크 사용이 허용되지 않았어요.</b> 주소창 왼쪽의 자물쇠(또는 카메라) 아이콘을 눌러 마이크를 <b>허용</b>으로 바꾼 뒤 다시 눌러 주세요.";
+    }else if(err && err.name==="NotFoundError"){
+      msg = "<b>마이크를 찾지 못했어요.</b> 마이크가 연결되어 있는지 확인해 주세요.";
+    }else{
+      msg = "<b>마이크를 열 수 없어요.</b> 이 페이지가 https 주소인지 확인하고, 다른 브라우저(크롬)에서 열어 보세요. 아래 예시 파형으로는 계속 공부할 수 있어요.";
+    }
+    showNotice(msg);
+    setStatus("마이크 꺼짐", false);
+  }
+}
+
+function stop(){
+  S.running=false; S.holding=true;
+  if(raf) cancelAnimationFrame(raf); raf=null;
+  if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream=null; }
+  if(ac){ ac.close(); ac=null; }
+  analyser=null;
+  elMain.textContent="🎤 다시 측정하기"; elMain.className="btn";
+  elMeterTag.textContent="멈춤 · 파형 관찰"; elMeterTag.className="tag hold";
+  elTlTag.textContent="기록 멈춤"; elTlTag.className="tag hold";
+  elScopeBadge.textContent = "멈춘 파형 (마지막 순간)";
+  setStatus("멈춤 — 파형을 살펴보세요", false);
+  elShot.disabled=false;
+  drawScope(); drawTimeline(); updateUI();
+}
+
+/* ============ 저장(스냅샷) ============ */
+function makeShot(label, wave, db, hz, amp, sr, isSample){
+  var n = Math.min(wave.length, Math.round(sr*0.025));
+  var start=0;
+  for(var s=1;s<Math.min(wave.length-n-1, Math.round(sr*0.01));s++){ if(wave[s-1]<=0 && wave[s]>0){ start=s; break; } }
+  var out=new Float32Array(360);
+  for(var i=0;i<360;i++) out[i]=wave[start+Math.floor(i/360*n)]||0;
+  return {id:++S.seq, label:label, wave:out, db:db, hz:hz, amp:amp, sample:!!isSample};
+}
+function capture(){
+  var src = S.showLoud && S.loudest ? S.loudest : S;
+  var db = S.showLoud && S.loudest ? S.loudest.db : S.dbSmooth;
+  var label = (src.hz>0 ? "'"+noteOf(src.hz).name+"' 소리" : zoneOf(db).short);
+  S.shots.unshift(makeShot(label, src.wave, db, src.hz, src.amp, src.sr||S.sr, false));
+  if(S.shots.length>8) S.shots.pop();
+  renderShots();
+}
+function renderShots(){
+  elShots.innerHTML="";
+  var samples=0;
+  for(var i=0;i<S.shots.length;i++) if(S.shots[i].sample) samples++;
+  elCount.textContent = S.shots.length===0 ? "" : (S.shots.length+"개 저장됨"+(samples?" (예시 "+samples+")":""));
+  if(S.shots.length===0){
+    elShots.innerHTML='<div class="empty">아직 저장한 소리가 없어요. 측정을 시작하고 <b>이 소리 저장</b>을 눌러 보세요.</div>';
+    return;
+  }
+  S.shots.forEach(function(sh){
+    var c=cssVar(zoneOf(sh.db).cvar);
+    var card=document.createElement("div");
+    card.className="card";
+    card.innerHTML =
+      '<div class="cwave"><canvas></canvas></div>'+
+      '<div class="cbody">'+
+        '<input class="cname" value="'+sh.label.replace(/"/g,"&quot;")+'" aria-label="소리 이름">'+
+        '<div class="crow">'+
+          '<span class="chip db" style="--zone:'+c+';--zone-soft:color-mix(in srgb,'+c+' 14%, var(--surface))">'+Math.round(sh.db)+' dB</span>'+
+          '<span class="chip">'+(sh.hz>0?Math.round(sh.hz)+" Hz":"— Hz")+'</span>'+
+          '<span class="chip">진폭 '+Math.round(clamp(sh.amp,0,1)*100)+'%</span>'+
+        '</div>'+
+        '<button class="del">지우기</button>'+
+      '</div>';
+    elShots.appendChild(card);
+    drawShot(card.querySelector("canvas"), sh);
+    card.querySelector(".cname").addEventListener("input", function(e){ sh.label=e.target.value; });
+    card.querySelector(".del").addEventListener("click", function(){
+      S.shots = S.shots.filter(function(x){ return x.id!==sh.id; });
+      renderShots();
+    });
+  });
+}
+
+/* ============ 이벤트 ============ */
+elMain.addEventListener("click", function(){ S.running ? stop() : start(); });
+elShot.addEventListener("click", capture);
+$("clearBtn").addEventListener("click", function(){ S.shots=[]; renderShots(); });
+
+$("tabWave").addEventListener("click", function(){ setTab("wave"); });
+$("tabSpec").addEventListener("click", function(){ setTab("spec"); });
+function setTab(t){
+  S.tab=t;
+  $("tabWave").setAttribute("aria-selected", t==="wave");
+  $("tabSpec").setAttribute("aria-selected", t==="spec");
+  updateUI(); drawScope();
+}
+
+$("winSeg").addEventListener("click", function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  S.winMs=parseInt(b.dataset.ms,10);
+  Array.prototype.forEach.call(this.children, function(x){ x.setAttribute("aria-pressed", x===b); });
+  updateUI(); drawScope();
+});
+
+elLoud.addEventListener("click", function(){
+  if(!S.loudest) return;
+  S.showLoud=true;
+  elLoud.style.display="none"; elLive.style.display="";
+  elScopeBadge.textContent="가장 큰 순간 · "+Math.round(S.loudest.db)+" dB";
+  updateUI(); drawScope();
+});
+elLive.addEventListener("click", function(){
+  S.showLoud=false;
+  elLive.style.display="none"; elLoud.style.display="";
+  elScopeBadge.textContent = S.running ? "실시간 파형" : "멈춘 파형 (마지막 순간)";
+  updateUI(); drawScope();
+});
+
+$("calib").addEventListener("input", function(e){
+  S.calib=parseInt(e.target.value,10);
+  $("calibVal").textContent=(S.calib>=0?"+":"")+S.calib+" dB";
+});
+
+var rt=null;
+window.addEventListener("resize", function(){
+  clearTimeout(rt);
+  rt=setTimeout(function(){ drawScope(); drawTimeline(); renderShots(); }, 120);
+});
+
+/* ============ 시작 상태 ============ */
+S.shots = [
+  makeShot("낮은 소리 (도)", synth(131, 0.30, 4096, 48000, true), 62, 131, 0.30, 48000, true),
+  makeShot("높은 소리 (높은 도)", synth(523, 0.30, 4096, 48000, true), 62, 523, 0.30, 48000, true)
+];
+S.shots[0].sample=true; S.shots[1].sample=true;
+
+paintZone(42);
+updateUI();
+renderShots();
+requestAnimationFrame(function(){ drawScope(); drawTimeline(); });
+
+})();
+</script>
+</body>
+</html>
