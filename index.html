@@ -7,6 +7,11 @@
 <meta name="theme-color" content="#E9EDF4" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#080D18" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1424'/%3E%3Cpath d='M4 16h3l3-8 3.5 16L17 10l3 8 2.5-4H28' stroke='%233D8BF2' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<meta property="og:title" content="소리 탐험대">
+<meta property="og:description" content="마이크로 소리 크기(dB)를 재고 파형과 주파수를 눈으로 비교하는 초등 과학 탐구 앱">
+<meta property="og:image" content="/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <style>html{color-scheme:light dark}img{max-width:100%}[hidden]{display:none!important}</style><title>소리 탐험대</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,6 +31,9 @@
   --scope-ink:#93A6C6;
   --accent:#2F6BE8;
   --accent-soft:#DCE7FD;
+  --pitch:#7A3FD4;
+  --pitch-lo:#3F2FA6;
+  --pitch-hi:#DD5CBE;
   --z1:#3D8BF2;
   --z2:#12A38C;
   --z3:#DB9A11;
@@ -48,6 +56,9 @@
     --scope-grid:#1B2740;
     --accent:#6C9BFF;
     --accent-soft:#1E2C4C;
+    --pitch:#B18CFF;
+    --pitch-lo:#5B46C9;
+    --pitch-hi:#FF8FDC;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.8);
   }
 }
@@ -64,6 +75,9 @@
   --scope-grid:#1B2740;
   --accent:#6C9BFF;
   --accent-soft:#1E2C4C;
+  --pitch:#B18CFF;
+  --pitch-lo:#5B46C9;
+  --pitch-hi:#FF8FDC;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.8);
 }
 
@@ -130,8 +144,15 @@ button{font-family:inherit;color:inherit}
 .notice.on{display:block}
 
 /* ---------- layout ---------- */
-.stage{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
-@media (max-width:880px){.stage{grid-template-columns:1fr}}
+.stage{display:grid;grid-template-columns:272px 252px minmax(340px,1fr);gap:16px;align-items:start}
+@media (max-width:1060px){
+  .stage{grid-template-columns:1fr 1fr}
+  .right{grid-column:1 / -1}
+}
+@media (max-width:720px){
+  .stage{grid-template-columns:1fr}
+  .right{grid-column:auto}
+}
 
 .panel{
   background:var(--surface);border:1px solid var(--line);
@@ -168,10 +189,10 @@ button{font-family:inherit;color:inherit}
   position:relative;width:46px;flex:none;height:290px;border-radius:12px;overflow:hidden;
   background:var(--surface-2);border:1px solid var(--line);
 }
-.fill{position:absolute;left:0;right:0;bottom:0;height:0%;
+.fill{position:absolute;left:0;right:0;bottom:0;height:var(--lvl,0%);
   background:linear-gradient(to top,var(--z1) 0%,var(--z1) 24%,var(--z2) 38%,var(--z3) 55%,var(--z4) 72%,var(--z5) 92%);
   transition:height .09s linear}
-.peakline{position:absolute;left:0;right:0;height:3px;background:var(--ink);bottom:0;transition:bottom .3s ease;border-radius:2px;opacity:.85}
+.peakline{position:absolute;left:0;right:0;height:3px;background:var(--ink);bottom:var(--pk,0%);transition:bottom .3s ease;border-radius:2px;opacity:.85}
 .scale{position:relative;flex:1;height:290px;font-size:11.5px;color:var(--ink-3)}
 .scale i{position:absolute;left:0;right:0;transform:translateY(50%);font-style:normal;display:flex;gap:7px;align-items:center;white-space:nowrap}
 .scale i::before{content:"";width:9px;height:1px;background:var(--line);flex:none}
@@ -186,6 +207,60 @@ button{font-family:inherit;color:inherit}
 .calib label{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-3);font-weight:700}
 .calib input{width:100%;margin-top:6px;accent-color:var(--accent)}
 .calib p{margin:5px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.45}
+
+/* ---------- 높낮이 온도계 ---------- */
+.pitchpanel .reading .big{font-size:56px;font-family:"Jua","Gothic A1",sans-serif;font-weight:400;letter-spacing:0}
+.pitchpanel .reading .unit{font-size:17px;color:var(--pitch)}
+.psub{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.psub b{font-family:"Jua","Gothic A1",sans-serif;font-weight:400;font-size:15.5px;color:var(--pitch)}
+.psub span{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+.pgauge{display:grid;grid-template-columns:1fr 40px 1fr;gap:7px;margin-top:14px;padding:8px 0}
+.ptrack{
+  position:relative;width:40px;height:272px;border-radius:10px;overflow:hidden;
+  border:1px solid var(--line);
+  background:repeating-linear-gradient(to top,
+    var(--surface-2) 0 20%,
+    color-mix(in srgb,var(--pitch) 9%,var(--surface-2)) 20% 40%);
+}
+.pfill{
+  position:absolute;left:0;right:0;bottom:0;height:var(--lvl,0%);
+  background:linear-gradient(to top,var(--pitch-lo) 0%,var(--pitch) 58%,var(--pitch-hi) 100%);
+  transition:height .16s ease;opacity:.92;
+}
+.ppeak{
+  position:absolute;left:-2px;right:-2px;height:3px;border-radius:2px;
+  background:var(--pitch-hi);bottom:var(--pk,0%);transition:bottom .3s ease;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--surface) 70%,transparent);
+}
+.plow{
+  position:absolute;left:-2px;right:-2px;height:2px;border-radius:2px;
+  background:var(--ink-3);bottom:var(--lo,0%);transition:bottom .3s ease;opacity:.7;
+}
+.pcol{position:relative;height:272px;font-size:10.5px;color:var(--ink-3);line-height:1.2}
+.pcol i{position:absolute;font-style:normal;display:flex;align-items:center;gap:5px;white-space:nowrap;transform:translateY(-50%)}
+.pcol.l i{right:0}
+.pcol.l i::after{content:"";width:7px;height:1px;background:var(--line);flex:none}
+.pcol.l em{font-style:normal;font-weight:700;color:var(--ink-2)}
+.pcol.r{font-size:10px}
+.pcol.r i{left:0}
+.pcol.r i::before{content:"";width:7px;height:1px;background:var(--line);flex:none}
+
+.best{margin-top:4px;display:grid;gap:6px}
+.brow{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:9px 11px;border-radius:11px;
+  background:var(--surface-2);border:1px solid var(--line-soft);
+}
+.brow.top{
+  background:color-mix(in srgb,var(--pitch) 12%,var(--surface));
+  border-color:color-mix(in srgb,var(--pitch) 32%,var(--line));
+}
+.brow .blabel{font-size:11.5px;font-weight:700;color:var(--ink-3)}
+.brow b{font-family:"Jua","Gothic A1",sans-serif;font-weight:400;font-size:15px;text-align:right}
+.brow.top b{color:var(--pitch)}
+.best.done .brow.top{box-shadow:0 0 0 3px color-mix(in srgb,var(--pitch) 20%,transparent)}
+.phint{margin:11px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.5}
 
 /* ---------- scope ---------- */
 .right{display:grid;gap:16px}
@@ -321,6 +396,35 @@ footer{margin-top:22px;text-align:center;font-size:12px;color:var(--ink-3);line-
       </div>
     </section>
 
+    <!-- 높낮이 온도계 -->
+    <section class="panel pitchpanel" aria-label="소리 높낮이 측정">
+      <div class="phead"><h2>높낮이 온도계</h2><span class="tag" id="pitchTag">예시</span></div>
+      <div class="meter-body">
+        <div class="reading">
+          <span class="big" id="noteNow">라</span><span class="unit num" id="octNow">4</span>
+        </div>
+        <div class="psub">
+          <b id="pitchWord">가운데 라</b><span class="num" id="pitchHz">440 Hz</span>
+        </div>
+
+        <div class="pgauge">
+          <div class="pcol l" id="pscaleL"></div>
+          <div class="ptrack">
+            <div class="pfill" id="pfill"></div>
+            <div class="plow" id="plow"></div>
+            <div class="ppeak" id="ppeak"></div>
+          </div>
+          <div class="pcol r" id="pscaleR"></div>
+        </div>
+
+        <div class="best" id="bestCard">
+          <div class="brow top"><span class="blabel">가장 높았던 음</span><b id="bestHi">미 (E5)</b></div>
+          <div class="brow"><span class="blabel">가장 낮았던 음</span><b id="bestLo">솔 (G3)</b></div>
+        </div>
+        <p class="phint" id="pitchHint">“이—” 하고 길게 소리 내면서 조금씩 높여 보세요. 어디까지 올라가는지 막대가 따라 올라갑니다.</p>
+      </div>
+    </section>
+
     <!-- 오실로스코프 -->
     <div class="right">
       <section class="panel" aria-label="소리 파형 보기">
@@ -366,7 +470,7 @@ footer{margin-top:22px;text-align:center;font-size:12px;color:var(--ink-3);line-
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel tlpanel">
         <div class="phead"><h2>시간에 따른 소리 크기</h2><span class="tag" id="tlTag">예시 기록</span></div>
         <div class="tl">
           <canvas id="timeline" aria-label="시간에 따른 소리 크기 그래프"></canvas>
@@ -401,15 +505,20 @@ footer{margin-top:22px;text-align:center;font-size:12px;color:var(--ink-3);line-
         <p>같은 "아—"를 아주 작게, 속삭이듯 내 보세요.</p>
         <div class="what">→ 높낮이는 그대로인데 물결이 <b>납작</b>해져요</div>
       </div>
-      <div class="g" style="--gc:var(--z4)">
+      <div class="g" style="--gc:var(--pitch)">
         <h3>높은 소리</h3>
-        <p>가장 높은 목소리로 "이—" 하고 길게 내 보세요.</p>
-        <div class="what">→ 같은 시간 안에 물결이 <b>더 촘촘</b>해요 (주파수↑)</div>
+        <p>"이—" 하고 길게 내면서 조금씩 높여 보세요. 어디까지 올라가나요?</p>
+        <div class="what">→ 높낮이 온도계가 <b>위로</b> 올라가고, 물결이 <b>촘촘</b>해져요</div>
       </div>
       <div class="g" style="--gc:var(--z2)">
         <h3>낮은 소리</h3>
         <p>가장 낮은 목소리로 "우—" 하고 길게 내 보세요.</p>
-        <div class="what">→ 물결이 <b>넓고 느긋</b>해요 (주파수↓)</div>
+        <div class="what">→ 온도계가 <b>아래로</b> 내려가고, 물결이 <b>넓고 느긋</b>해져요</div>
+      </div>
+      <div class="g" style="--gc:var(--pitch-hi)">
+        <h3>누가 제일 높이 올라갈까</h3>
+        <p>측정을 시작해 소리를 높이다가 멈추면, 가장 높았던 음이 계이름으로 남아요.</p>
+        <div class="what">→ 친구와 <b>최고 음</b>과 <b>반음 수</b>를 견주어 보세요</div>
       </div>
     </div>
   </section>
@@ -444,16 +553,50 @@ var MARKS = [
 ];
 var DB_MIN = 0, DB_MAX = 120;
 var NOTES = ["도","도♯","레","레♯","미","파","파♯","솔","솔♯","라","라♯","시"];
+var NOTES_EN = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+var OCT_WORD = {2:"아주 낮은",3:"낮은",4:"가운데",5:"높은",6:"아주 높은",7:"제일 높은"};
+
+/* 높낮이 눈금: 도(C2)부터 도(C7)까지 5옥타브, 로그 눈금이라 한 옥타브가 똑같이 20% */
+var P_MIN = 65.406, P_MAX = 2093.0;
+var OCT_MARKS = [
+  {hz:65.41,  t:"아주 낮은 도"},
+  {hz:130.81, t:"낮은 도"},
+  {hz:261.63, t:"가운데 도"},
+  {hz:523.25, t:"높은 도"},
+  {hz:1046.5, t:"아주 높은 도"},
+  {hz:2093.0, t:"제일 높은 도"}
+];
+var PITCH_REF = [
+  {hz:110,  t:"남자 목소리"},
+  {hz:220,  t:"여자 목소리"},
+  {hz:350,  t:"어린이 목소리"},
+  {hz:1200, t:"휘파람"},
+  {hz:2000, t:"새소리"}
+];
 
 function zoneOf(db){ for(var i=0;i<ZONES.length;i++){ if(db < ZONES[i].max) return ZONES[i]; } return ZONES[4]; }
 function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 function noteOf(hz){
-  if(!hz || hz<=0) return {name:"—", cents:0};
-  var n = Math.round(12*Math.log2(hz/440));
-  var idx = ((n+9)%12+12)%12;
-  var oct = 4 + Math.floor((n+9)/12);
-  return {name:NOTES[idx]+(oct>=5?"↑":(oct<=3?"↓":"")), oct:oct};
+  if(!hz || hz<=0) return {ok:false, name:"—", ko:"—", en:"", oct:0, word:"", full:"—"};
+  var midi = Math.round(12*Math.log2(hz/440)) + 69;
+  var idx = ((midi%12)+12)%12;
+  var oct = Math.floor(midi/12) - 1;
+  var word = OCT_WORD[clamp(oct,2,7)] || "";
+  return {
+    ok:true,
+    name:NOTES[idx],          // 계이름 (도레미)
+    ko:NOTES[idx],
+    en:NOTES_EN[idx]+oct,     // C4, A5 …
+    oct:oct,
+    word:word,                // 가운데 / 높은 …
+    full:word+" "+NOTES[idx]  // "높은 솔"
+  };
+}
+/* 높낮이 막대에서의 위치(%) — 로그 눈금 */
+function pitchPos(hz){
+  if(!hz || hz<=0) return 0;
+  return clamp(Math.log2(hz/P_MIN)/Math.log2(P_MAX/P_MIN)*100, 0, 100);
 }
 
 /* ============ 상태 ============ */
@@ -461,6 +604,7 @@ var S = {
   running:false, demo:true, holding:false,
   db:42, dbSmooth:42, peak:0, sum:0, count:0,
   hz:440, amp:0.38, clarity:1,
+  hiHz:659.26, loHz:196.00, pitchBuf:[],
   winMs:25, tab:"wave",
   wave:null, spec:null, sr:48000,
   hist:[], HISTMAX:760,
@@ -498,7 +642,11 @@ var elDb=$("dbNow"), elFace=$("zoneFace"), elZName=$("zoneName"), elZEx=$("zoneE
     elScopeBadge=$("scopeBadge"), elScopeInfo=$("scopeInfo"),
     elStatus=$("status"), elStatusText=$("statusText"), elMain=$("mainBtn"), elShot=$("shotBtn"),
     elMeterTag=$("meterTag"), elTlTag=$("tlTag"), elNotice=$("notice"),
-    elLoud=$("loudBtn"), elLive=$("liveBtn"), elShots=$("shots"), elCount=$("shotCount");
+    elLoud=$("loudBtn"), elLive=$("liveBtn"), elShots=$("shots"), elCount=$("shotCount"),
+    elNoteNow=$("noteNow"), elOctNow=$("octNow"), elPitchWord=$("pitchWord"), elPitchHz=$("pitchHz"),
+    elPFill=$("pfill"), elPPeak=$("ppeak"), elPLow=$("plow"),
+    elBestHi=$("bestHi"), elBestLo=$("bestLo"), elBestCard=$("bestCard"),
+    elPitchTag=$("pitchTag"), elPitchHint=$("pitchHint");
 
 /* 눈금 만들기 */
 (function(){
@@ -508,6 +656,21 @@ var elDb=$("dbNow"), elFace=$("zoneFace"), elZName=$("zoneName"), elZEx=$("zoneE
     html += '<i style="top:'+y.toFixed(1)+'%"><b>'+m.db+'</b>'+m.t+'</i>';
   }
   $("scale").innerHTML = html;
+})();
+
+/* 높낮이 눈금 만들기 */
+(function(){
+  var l="", r="", i, m;
+  for(i=0;i<OCT_MARKS.length;i++){
+    m=OCT_MARKS[i];
+    l += '<i style="top:'+(100-pitchPos(m.hz)).toFixed(1)+'%"><em>'+m.t+'</em></i>';
+  }
+  for(i=0;i<PITCH_REF.length;i++){
+    m=PITCH_REF[i];
+    r += '<i style="top:'+(100-pitchPos(m.hz)).toFixed(1)+'%">'+m.t+'</i>';
+  }
+  $("pscaleL").innerHTML = l;
+  $("pscaleR").innerHTML = r;
 })();
 
 /* ============ 캔버스 ============ */
@@ -643,8 +806,8 @@ function updateUI(){
   var db=S.dbSmooth;
   elDb.textContent = Math.round(db);
   paintZone(db);
-  elFill.style.height = clamp((db-DB_MIN)/(DB_MAX-DB_MIN)*100,0,100).toFixed(1)+"%";
-  elPeak.style.bottom = clamp((S.peak-DB_MIN)/(DB_MAX-DB_MIN)*100,0,100).toFixed(1)+"%";
+  elFill.style.setProperty("--lvl", clamp((db-DB_MIN)/(DB_MAX-DB_MIN)*100,0,100).toFixed(1)+"%");
+  elPeak.style.setProperty("--pk", clamp((S.peak-DB_MIN)/(DB_MAX-DB_MIN)*100,0,100).toFixed(1)+"%");
   elMax.textContent = S.peak>0 ? Math.round(S.peak) : "—";
   elAvg.textContent = S.count>0 ? Math.round(S.sum/S.count) : "—";
 
@@ -661,6 +824,54 @@ function updateUI(){
     elNoteHint.textContent="또렷한 높낮이가 없어요";
   }
   elScopeInfo.textContent = S.tab==="wave" ? S.winMs+" ms" : "0 – "+Math.round(S.sr/2000)+" kHz";
+  updatePitch();
+}
+
+/* ============ 높낮이 온도계 ============ */
+function bestLabel(hz){
+  if(!hz) return "—";
+  var n = noteOf(hz);
+  return n.full + " (" + n.en + ")";
+}
+function updatePitch(){
+  var src = S.showLoud && S.loudest ? S.loudest : S;
+  var hz = src.hz;
+
+  if(hz > 0){
+    var n = noteOf(hz);
+    elNoteNow.textContent = n.ko;
+    elOctNow.textContent = n.oct;
+    elPitchWord.textContent = n.full;
+    elPitchHz.textContent = Math.round(hz) + " Hz";
+  } else {
+    elNoteNow.textContent = "—";
+    elOctNow.textContent = "";
+    elPitchWord.textContent = S.running ? "소리를 내 보세요" : "또렷한 높낮이 없음";
+    elPitchHz.textContent = "— Hz";
+  }
+
+  elPFill.style.setProperty("--lvl", pitchPos(hz).toFixed(1)+"%");
+  elPPeak.style.setProperty("--pk", pitchPos(S.hiHz).toFixed(1)+"%");
+  elPLow.style.setProperty("--lo", pitchPos(S.loHz).toFixed(1)+"%");
+  elPPeak.style.visibility = S.hiHz > 0 ? "visible" : "hidden";
+  elPLow.style.visibility  = S.loHz > 0 ? "visible" : "hidden";
+
+  elBestHi.textContent = bestLabel(S.hiHz);
+  elBestLo.textContent = bestLabel(S.loHz);
+}
+
+/* 옥타브 오류나 잡음으로 생긴 한순간의 튐을 걸러내고, 3번 연속 비슷할 때만 인정 */
+function acceptPitch(hz){
+  if(!hz || hz<=0){ S.pitchBuf.length = 0; return 0; }
+  S.pitchBuf.push(hz);
+  if(S.pitchBuf.length > 3) S.pitchBuf.shift();
+  if(S.pitchBuf.length < 3) return 0;
+  var sorted = S.pitchBuf.slice().sort(function(a,b){ return a-b; });
+  var med = sorted[1];
+  for(var i=0;i<S.pitchBuf.length;i++){
+    if(Math.abs(12*Math.log2(S.pitchBuf[i]/med)) > 1.0) return 0;  // 반음 넘게 흔들리면 버림
+  }
+  return med;
 }
 
 /* ============ 오디오 ============ */
@@ -712,6 +923,12 @@ function loop(){
   if(frame%3===0){
     var hz = detectPitch(timeBuf, S.sr);
     if(hz>0) S.hz=hz; else if(S.dbSmooth < 42) S.hz=0;
+
+    var stable = acceptPitch(hz);
+    if(stable>0){
+      if(stable > S.hiHz) S.hiHz = stable;
+      if(S.loHz===0 || stable < S.loHz) S.loHz = stable;
+    }
   }
   frame++;
 
@@ -766,6 +983,10 @@ async function start(){
 
     S.running=true; S.demo=false; S.holding=false; S.showLoud=false; S.loudest=null;
     S.peak=0; S.sum=0; S.count=0; S.hist=[];
+    S.hiHz=0; S.loHz=0; S.pitchBuf=[];
+    elBestCard.classList.remove("done");
+    elPitchTag.textContent="측정 중"; elPitchTag.className="tag";
+    elPitchHint.textContent="“이—” 하고 길게 소리 내면서 조금씩 높여 보세요. 분홍 선이 오늘의 최고 기록이에요.";
     elMeterTag.textContent="측정 중"; elMeterTag.className="tag";
     elTlTag.textContent="지금 기록 중"; elTlTag.className="tag";
     elScopeBadge.textContent="실시간 파형";
@@ -798,6 +1019,16 @@ function stop(){
   elMeterTag.textContent="멈춤 · 파형 관찰"; elMeterTag.className="tag hold";
   elTlTag.textContent="기록 멈춤"; elTlTag.className="tag hold";
   elScopeBadge.textContent = "멈춘 파형 (마지막 순간)";
+  elPitchTag.textContent="멈춤 · 결과"; elPitchTag.className="tag hold";
+  elBestCard.classList.add("done");
+  if(S.hiHz > 0){
+    var hiN = noteOf(S.hiHz);
+    var span = (S.loHz>0) ? Math.round(12*Math.log2(S.hiHz/S.loHz)) : 0;
+    elPitchHint.innerHTML = "가장 높이 올라간 음은 <b>" + hiN.full + "</b> (" + Math.round(S.hiHz) + "Hz) 이에요." +
+      (span>0 ? " 가장 낮은 음부터 <b>" + span + "반음</b>만큼 올라갔어요." : "");
+  } else {
+    elPitchHint.textContent = "높낮이를 알아내지 못했어요. “아—” 나 “이—” 처럼 한 음을 길게 내 보세요.";
+  }
   setStatus("멈춤 — 파형을 살펴보세요", false);
   elShot.disabled=false;
   drawScope(); drawTimeline(); updateUI();
