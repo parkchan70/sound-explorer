@@ -215,13 +215,31 @@ button{font-family:inherit;color:inherit}
 .psub b{font-family:"Jua","Gothic A1",sans-serif;font-weight:400;font-size:15.5px;color:var(--pitch)}
 .psub span{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
 
+/* 음정 미세 차이 (센트) */
+.cents{margin-top:12px}
+.cbar{position:relative;height:10px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line-soft)}
+.cbar::before{content:"";position:absolute;left:40%;right:40%;top:0;bottom:0;background:color-mix(in srgb,var(--z2) 26%,transparent)}
+.ctick{position:absolute;left:50%;top:1px;bottom:1px;width:1px;background:var(--ink-3);opacity:.55}
+.cdot{
+  position:absolute;top:50%;left:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;
+  background:var(--pitch);border:2px solid var(--surface);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pitch) 55%,transparent);
+  transition:left .14s ease, background .2s ease, opacity .2s ease;
+}
+.crow{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:6px}
+.crow b{font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.crow span{font-size:11.5px;font-weight:700;color:var(--ink-3)}
+.cents.ok .cdot{background:var(--z2);box-shadow:0 0 0 1px color-mix(in srgb,var(--z2) 55%,transparent)}
+.cents.ok .crow b,.cents.ok .crow span{color:var(--z2)}
+.cents.off .cdot{opacity:.2}
+
 .pgauge{display:grid;grid-template-columns:1fr 40px 1fr;gap:7px;margin-top:14px;padding:8px 0}
 .ptrack{
   position:relative;width:40px;height:272px;border-radius:10px;overflow:hidden;
   border:1px solid var(--line);
   background:repeating-linear-gradient(to top,
-    var(--surface-2) 0 20%,
-    color-mix(in srgb,var(--pitch) 9%,var(--surface-2)) 20% 40%);
+    var(--surface-2) 0 25%,
+    color-mix(in srgb,var(--pitch) 9%,var(--surface-2)) 25% 50%);
 }
 .pfill{
   position:absolute;left:0;right:0;bottom:0;height:var(--lvl,0%);
@@ -407,6 +425,11 @@ footer{margin-top:22px;text-align:center;font-size:12px;color:var(--ink-3);line-
           <b id="pitchWord">가운데 라</b><span class="num" id="pitchHz">440 Hz</span>
         </div>
 
+        <div class="cents ok" id="centsBox">
+          <div class="cbar"><span class="ctick"></span><div class="cdot" id="centsDot"></div></div>
+          <div class="crow"><b id="centsVal">0센트</b><span id="centsWord">음이 정확해요</span></div>
+        </div>
+
         <div class="pgauge">
           <div class="pcol l" id="pscaleL"></div>
           <div class="ptrack">
@@ -556,22 +579,22 @@ var NOTES = ["도","도♯","레","레♯","미","파","파♯","솔","솔♯","
 var NOTES_EN = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 var OCT_WORD = {2:"아주 낮은",3:"낮은",4:"가운데",5:"높은",6:"아주 높은",7:"제일 높은"};
 
-/* 높낮이 눈금: 도(C2)부터 도(C7)까지 5옥타브, 로그 눈금이라 한 옥타브가 똑같이 20% */
-var P_MIN = 65.406, P_MAX = 2093.0;
+/* 높낮이 눈금: 사람이 보통 내는 소리에 맞춰 솔(G2, 98Hz)부터 솔(G6, 1568Hz)까지 4옥타브.
+   남자 말소리(약 110Hz)가 맨 아래 조금 위에 놓이고, 어린이 높은 노래와 휘파람이 위쪽에 온다.
+   로그 눈금이라 한 옥타브가 똑같이 25%씩 차지한다. */
+var P_MIN = 98.0, P_MAX = 1568.0;
 var OCT_MARKS = [
-  {hz:65.41,  t:"아주 낮은 도"},
   {hz:130.81, t:"낮은 도"},
   {hz:261.63, t:"가운데 도"},
   {hz:523.25, t:"높은 도"},
-  {hz:1046.5, t:"아주 높은 도"},
-  {hz:2093.0, t:"제일 높은 도"}
+  {hz:1046.5, t:"아주 높은 도"}
 ];
 var PITCH_REF = [
   {hz:110,  t:"남자 목소리"},
   {hz:220,  t:"여자 목소리"},
-  {hz:350,  t:"어린이 목소리"},
-  {hz:1200, t:"휘파람"},
-  {hz:2000, t:"새소리"}
+  {hz:300,  t:"어린이 목소리"},
+  {hz:600,  t:"리코더"},
+  {hz:1500, t:"휘파람"}
 ];
 
 function zoneOf(db){ for(var i=0;i<ZONES.length;i++){ if(db < ZONES[i].max) return ZONES[i]; } return ZONES[4]; }
@@ -579,7 +602,9 @@ function cssVar(n){ return getComputedStyle(document.documentElement).getPropert
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
 function noteOf(hz){
   if(!hz || hz<=0) return {ok:false, name:"—", ko:"—", en:"", oct:0, word:"", full:"—"};
-  var midi = Math.round(12*Math.log2(hz/440)) + 69;
+  var exact = 12*Math.log2(hz/440) + 69;   // 소수점까지 살린 음 번호
+  var midi = Math.round(exact);
+  var cents = Math.round((exact - midi) * 100);  // 가장 가까운 음에서 얼마나 벗어났나 (±50센트)
   var idx = ((midi%12)+12)%12;
   var oct = Math.floor(midi/12) - 1;
   var word = OCT_WORD[clamp(oct,2,7)] || "";
@@ -589,6 +614,7 @@ function noteOf(hz){
     ko:NOTES[idx],
     en:NOTES_EN[idx]+oct,     // C4, A5 …
     oct:oct,
+    cents:cents,
     word:word,                // 가운데 / 높은 …
     full:word+" "+NOTES[idx]  // "높은 솔"
   };
@@ -646,7 +672,8 @@ var elDb=$("dbNow"), elFace=$("zoneFace"), elZName=$("zoneName"), elZEx=$("zoneE
     elNoteNow=$("noteNow"), elOctNow=$("octNow"), elPitchWord=$("pitchWord"), elPitchHz=$("pitchHz"),
     elPFill=$("pfill"), elPPeak=$("ppeak"), elPLow=$("plow"),
     elBestHi=$("bestHi"), elBestLo=$("bestLo"), elBestCard=$("bestCard"),
-    elPitchTag=$("pitchTag"), elPitchHint=$("pitchHint");
+    elPitchTag=$("pitchTag"), elPitchHint=$("pitchHint"),
+    elCents=$("centsBox"), elCentsDot=$("centsDot"), elCentsVal=$("centsVal"), elCentsWord=$("centsWord");
 
 /* 눈금 만들기 */
 (function(){
@@ -843,11 +870,25 @@ function updatePitch(){
     elOctNow.textContent = n.oct;
     elPitchWord.textContent = n.full;
     elPitchHz.textContent = Math.round(hz) + " Hz";
+
+    var c = clamp(n.cents, -50, 50);
+    elCentsDot.style.left = (50 + c) + "%";
+    elCentsVal.textContent = (c>0?"+":"") + c + "센트";
+    elCentsWord.textContent =
+      Math.abs(c) <= 10 ? "음이 정확해요" :
+      c >  30 ? "많이 높아요" : c > 10 ? "조금 높아요" :
+      c < -30 ? "많이 낮아요" : "조금 낮아요";
+    elCents.className = "cents" + (Math.abs(c) <= 10 ? " ok" : "");
   } else {
     elNoteNow.textContent = "—";
     elOctNow.textContent = "";
     elPitchWord.textContent = S.running ? "소리를 내 보세요" : "또렷한 높낮이 없음";
     elPitchHz.textContent = "— Hz";
+
+    elCentsDot.style.left = "50%";
+    elCentsVal.textContent = "—";
+    elCentsWord.textContent = "";
+    elCents.className = "cents off";
   }
 
   elPFill.style.setProperty("--lvl", pitchPos(hz).toFixed(1)+"%");
@@ -877,28 +918,65 @@ function acceptPitch(hz){
 /* ============ 오디오 ============ */
 var ac=null, analyser=null, stream=null, raf=null, timeBuf=null, freqBuf=null, frame=0, lastHist=0;
 
+/* 기본 주파수(사람이 느끼는 음 높이) 찾기 — 다운샘플 + 정규화 자기상관(NSDF)
+   사람 목소리는 배음이 세서, 자기상관을 정규화하지 않으면 2배 주파수가 더 큰 값으로
+   잡혀 실제보다 한 옥타브 높게 읽힌다. 그래서 길이로 정규화한 뒤, 가장 큰 봉우리의
+   85%를 넘는 '첫' 봉우리(= 가장 긴 주기 = 가장 낮은 음)를 기본 주파수로 고른다. */
+var PD_MIN = 60, PD_MAX = 2500;
+var dsBuf = null, nsdf = null;
 function detectPitch(buf, sr){
-  var SIZE=Math.min(buf.length,1536), i, j;
-  var rms=0; for(i=0;i<SIZE;i++) rms+=buf[i]*buf[i];
-  rms=Math.sqrt(rms/SIZE);
-  if(rms<0.008) return 0;
-  var r1=0, r2=SIZE-1, thres=0.2;
-  for(i=0;i<SIZE/2;i++){ if(Math.abs(buf[i])<thres){ r1=i; break; } }
-  for(i=1;i<SIZE/2;i++){ if(Math.abs(buf[SIZE-i])<thres){ r2=SIZE-i; break; } }
-  var n=r2-r1; if(n<200) return 0;
-  var c=new Float32Array(n);
-  for(i=0;i<n;i++){ var s=0; for(j=0;j<n-i;j++) s+=buf[r1+j]*buf[r1+j+i]; c[i]=s; }
-  var d=0; while(d<n-1 && c[d]>c[d+1]) d++;
-  var maxv=-1, maxp=-1;
-  for(i=d;i<n;i++){ if(c[i]>maxv){ maxv=c[i]; maxp=i; } }
-  if(maxp<=0 || maxv/(c[0]||1) < 0.35) return 0;
-  var T=maxp;
-  if(T>0 && T<n-1){
-    var x1=c[T-1], x2=c[T], x3=c[T+1], a=(x1+x3-2*x2)/2, b=(x3-x1)/2;
-    if(a) T = T - b/(2*a);
+  var D = Math.max(1, Math.round(sr/12000));     // 48kHz → 4배로 줄여 12kHz
+  var N = Math.floor(buf.length / D);
+  if(N < 256) return 0;
+  if(!dsBuf || dsBuf.length !== N) dsBuf = new Float32Array(N);
+
+  var i, j, s;
+  for(i=0;i<N;i++){                               // 이웃 샘플 평균 = 간단한 저역 통과
+    s = 0;
+    for(j=0;j<D;j++) s += buf[i*D+j];
+    dsBuf[i] = s / D;
   }
-  var hz=sr/T;
-  return (hz>55 && hz<4000) ? hz : 0;
+  var srd = sr / D;
+
+  var rms = 0;
+  for(i=0;i<N;i++) rms += dsBuf[i]*dsBuf[i];
+  rms = Math.sqrt(rms/N);
+  if(rms < 0.006) return 0;                       // 너무 조용하면 측정하지 않음
+
+  var minLag = Math.max(2, Math.floor(srd/PD_MAX));
+  var maxLag = Math.min(N-2, Math.ceil(srd/PD_MIN));
+  if(maxLag <= minLag+2) return 0;
+  if(!nsdf || nsdf.length < maxLag+2) nsdf = new Float32Array(maxLag+2);
+
+  var tau, ac, m, n2, a, b;
+  for(tau=minLag; tau<=maxLag; tau++){
+    ac = 0; m = 0; n2 = N - tau;
+    for(i=0;i<n2;i++){
+      a = dsBuf[i]; b = dsBuf[i+tau];
+      ac += a*b;
+      m  += a*a + b*b;
+    }
+    nsdf[tau] = m>0 ? (2*ac/m) : 0;               // −1 ~ 1 로 정규화
+  }
+
+  var best = 0;
+  for(tau=minLag+1; tau<maxLag; tau++){
+    if(nsdf[tau]>nsdf[tau-1] && nsdf[tau]>=nsdf[tau+1] && nsdf[tau]>best) best = nsdf[tau];
+  }
+  if(best < 0.45) return 0;                       // 음높이가 또렷하지 않으면 버림
+
+  var thr = best * 0.85, bestTau = -1;
+  for(tau=minLag+1; tau<maxLag; tau++){
+    if(nsdf[tau]>nsdf[tau-1] && nsdf[tau]>=nsdf[tau+1] && nsdf[tau]>=thr){ bestTau = tau; break; }
+  }
+  if(bestTau < 0) return 0;
+
+  var x1=nsdf[bestTau-1], x2=nsdf[bestTau], x3=nsdf[bestTau+1];
+  var aa=(x1+x3-2*x2)/2, bb=(x3-x1)/2, T=bestTau;
+  if(aa) T = bestTau - bb/(2*aa);                 // 봉우리 좌우로 포물선 보간
+
+  var hz = srd / T;
+  return (hz>PD_MIN && hz<PD_MAX) ? hz : 0;
 }
 
 function loop(){
